@@ -15,3 +15,19 @@
 -module(oauth2c).
 
 -export([]).
+
+-export_type([error_code/0, error_description/0, error_response/0]).
+
+-type error_code() :: invalid_request
+                    | invalid_client
+                    | invalid_grant
+                    | unauthorized_client
+                    | unsupported_grant_type
+                    | invalid_scope
+                    | binary().
+
+-type error_description() :: binary().
+
+-type error_response() :: #{error => error_code(),
+                            error_description => error_description(),
+                            error_uri => uri:uri()}.
