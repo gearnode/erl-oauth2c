@@ -28,6 +28,7 @@
 
 -type error_description() :: binary().
 
--type error_response() :: #{error => error_code(),
+-type error_response() :: #{error := error_code(),
                             error_description => error_description(),
                             error_uri => uri:uri()}.
+
