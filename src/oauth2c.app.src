@@ -18,7 +18,9 @@
   {registered, []},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    json,
+    uri
    ]},
   {env,[]},
   {modules, []},
