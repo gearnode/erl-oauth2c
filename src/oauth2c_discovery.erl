@@ -70,7 +70,8 @@
         {bas_resp_code, integer()}
       | {httpc, term()}
       | {invalid_syntax, term()}
-      | {invalid_metadata, term()}.
+      | {invalid_metadata, term()}
+      | {bad_issuer, oauth2c:issuer(), binary()}.
 
 -spec authorization_server_metadata_definition() ->
         jsv:definition().
@@ -118,7 +119,7 @@ discover(Issuer) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
 discover(Issuer, Suffix) ->
-  Endpoint = uri_string:resolve(Suffix, Issuer),
+  Endpoint = discovery_uri(Issuer, Suffix),
   case httpc:request(get, {Endpoint, []}, [], [{body_format, binary}]) of
     {ok, {{_, 200, "OK"}, _, Response}} ->
       case parse_metadata(Response) of
@@ -136,7 +137,6 @@ discover(Issuer, Suffix) ->
 -spec parse_metadata(binary()) ->
         {ok, authorization_server_metadata()} |
         {error, term()}.
-
 parse_metadata(Bin) ->
   case json:parse(Bin) of
     {ok, Data} ->
@@ -153,3 +153,14 @@ parse_metadata(Bin) ->
     {error, Reason} ->
       {error, {invalid_syntax, Reason}}
   end.
+
+-spec discovery_uri(oauth2c:issuer(), Suffix :: binary()) ->
+        binary().
+discovery_uri(Issuer0, Suffix) ->
+  Clean = fun (<<$/, Rest/binary>>) -> Rest;
+              (Bin) -> Bin
+          end,
+  Issuer = uri_string:parse(Issuer0),
+  Path = filename:join(Suffix, Clean(maps:get(path, Issuer, <<>>))),
+  DiscoveryURI = Issuer#{path => Path},
+  uri_string:normalize(DiscoveryURI).
