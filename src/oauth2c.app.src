@@ -20,7 +20,10 @@
    [kernel,
     stdlib,
     json,
-    uri
+    inets,
+    ssl,
+    uri,
+    jsv
    ]},
   {env,[]},
   {modules, []},
