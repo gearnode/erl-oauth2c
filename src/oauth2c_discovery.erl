@@ -123,8 +123,10 @@ discover(Issuer, Suffix) ->
   case httpc:request(get, {Endpoint, []}, [], [{body_format, binary}]) of
     {ok, {{_, 200, "OK"}, _, Response}} ->
       case parse_metadata(Response) of
-        {ok, Metadata} ->
-          {ok, Metadata};
+        {ok, #{issuer := Issuer} = MD} ->
+          {ok, MD};
+        {ok, #{issuer := Value}} ->
+          {error, {bad_issuer, Issuer, Value}};
         {error, Reason} ->
           {error, Reason}
       end;
