@@ -20,8 +20,7 @@
    [kernel,
     stdlib,
     json,
-    inets,
-    ssl,
+    mhttp,
     uri,
     jsv
    ]},

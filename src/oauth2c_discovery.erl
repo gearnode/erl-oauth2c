@@ -68,7 +68,7 @@
 
 -type discover_error_reason() ::
         {bas_resp_code, integer()}
-      | {httpc, term()}
+      | {mhttp, term()}
       | {invalid_syntax, term()}
       | {invalid_metadata, term()}
       | {bad_issuer, oauth2c:issuer(), binary()}.
@@ -112,17 +112,18 @@ authorization_server_metadata_definition() ->
 -spec discover(oauth2c:issuer()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
-discover(Issuer) ->
+discover(Issuer) when is_binary(Issuer) ->
   discover(Issuer, <<".well-known/oauth-authorization-server">>).
 
 -spec discover(oauth2c:issuer(), Suffix :: binary()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
-discover(Issuer, Suffix) ->
-  Endpoint = discovery_uri(Issuer, Suffix),
-  case httpc:request(get, {Endpoint, []}, [], [{body_format, binary}]) of
-    {ok, {{_, 200, "OK"}, _, Response}} ->
-      case parse_metadata(Response) of
+discover(Issuer, Suffix) when is_binary(Issuer), is_binary(Suffix) ->
+  io:format("~p~n", [discovery_uri(Issuer, Suffix)]),
+  Request = #{method => get, target => discovery_uri(Issuer, Suffix)},
+  case mhttp:send_request(Request) of
+    {ok, #{status := 200, body := Data}} ->
+      case parse_metadata(Data) of
         {ok, #{issuer := Issuer} = MD} ->
           {ok, MD};
         {ok, #{issuer := Value}} ->
@@ -130,10 +131,10 @@ discover(Issuer, Suffix) ->
         {error, Reason} ->
           {error, Reason}
       end;
-    {ok, {{_, Code, _}, _, _}} ->
-      {error, {bad_resp_code, Code}};
+    {ok, #{status := StatusCode}} ->
+      {error, {bad_resp_code, StatusCode}};
     {error, Reason} ->
-      {error, {httpc, Reason}}
+      {error, {mhttp, Reason}}
   end.
 
 -spec parse_metadata(binary()) ->
@@ -162,7 +163,14 @@ discovery_uri(Issuer0, Suffix) ->
   Clean = fun (<<$/, Rest/binary>>) -> Rest;
               (Bin) -> Bin
           end,
-  Issuer = uri_string:parse(Issuer0),
-  Path = filename:join(Suffix, Clean(maps:get(path, Issuer, <<>>))),
-  DiscoveryURI = Issuer#{path => Path},
-  uri_string:normalize(DiscoveryURI).
+  case uri:parse(Issuer0) of
+    {ok, Issuer} ->
+      Path =
+        lists:join($/, [<<"/">>,
+                        Clean(Suffix),
+                        Clean(maps:get(path, Issuer, <<>>))]),
+      URI = Issuer#{path => list_to_binary(Path)},
+      uri:serialize(URI);
+    {error, Reason} ->
+      erlang:error({bad_issuer, Reason})
+  end.
