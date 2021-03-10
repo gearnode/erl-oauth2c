@@ -17,7 +17,8 @@
 -export([new_client/3, new_client/4]).
 
 -export_type([issuer/0, id/0, secret/0,
-              client/0]).
+              client/0,
+              options/0]).
 
 -type issuer() :: binary().
 -type id() :: binary().
