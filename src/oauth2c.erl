@@ -15,6 +15,7 @@
 -module(oauth2c).
 
 -export([new_client/3, new_client/4,
+         discover/1, discover/2,
          authorize_url/3]).
 
 -export_type([client/0,
@@ -57,6 +58,18 @@ new_client(Issuer, Id, Secret) ->
         {ok, client()} | {error, term()}.
 new_client(Issuer, Id, Secret, Options) ->
   oauth2c_client:new_client(Issuer, Id, Secret, Options).
+
+-spec discover(client()) ->
+        {ok, oauth2c_discovery:authorization_server_metadata()} |
+        {error, oauth2c_discovery:discover_error_reason()}.
+discover(#{issuer := Issuer}) ->
+  oauth2c_discovery:discover(Issuer).
+
+-spec discover(client(), Suffix :: binary()) ->
+        {ok, oauth2c_discovery:authorization_server_metadata()} |
+        {error, oauth2c_discovery:discover_error_reason()}.
+discover(#{issuer := Issuer}, Suffix) ->
+  oauth2c_discovery:discover(Issuer, Suffix).
 
 -spec authorize_url(client(), response_type(), authorize_request()) ->
         {ok, binary()} | {error, term()}.
