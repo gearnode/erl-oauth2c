@@ -13,3 +13,53 @@
 %% IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 -module(oauth2c).
+
+-export([authorize_url/3]).
+
+-export_type([client/0,
+              response_type/0,
+              scope/0, scopes/0,
+              redirect_uri/0,
+              authorize_code_request/0, authorize_token_request/0,
+              authorize_request/0]).
+
+-type client() :: oauth2c_client:client().
+
+-type response_type() :: code | token.
+
+-type scope() :: binary().
+-type scopes() :: [scope()].
+
+-type redirect_uri() :: binary().
+
+-type authorize_code_request() :: #{state => binary(),
+                                    redirect_uri => redirect_uri(),
+                                    scope => scopes()}.
+
+-type authorize_token_request() :: #{state => binary(),
+                                     redirect_uri => redirect_uri(),
+                                     scope => scopes()}.
+
+-type authorize_request() ::
+        authorize_code_request()
+      | authorize_token_request().
+
+-spec authorize_url(client(), response_type(), authorize_request()) ->
+        {ok, binary()} | {error, term()}.
+authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
+              ResponseType, Request) ->
+  Parameters0 =
+    maps:merge(Request, #{client_id => Id,
+                          response_type => atom_to_binary(ResponseType)}),
+  Parameters = maps:fold(fun (K0, V, Acc) ->
+                             K = atom_to_binary(K0),
+                             Acc#{K => V}
+                         end, #{}, Parameters0),
+  case uri:parse(Endpoint0) of
+    {ok, Endpoint} ->
+      {ok,
+       uri:serialize(
+         uri:add_query_parameters(Endpoint, maps:to_list(Parameters)))};
+    {error, Reason} ->
+      {error, {invalid_authorization_endpoint, Reason}}
+  end.
