@@ -31,7 +31,7 @@
 
 -type error_response() :: #{error := error_code(),
                             error_description => error_description(),
-                            error_uri => uri:uri()}.
+                            error_uri => binary()}.
 
 -spec error_response_definition() ->
         jsv:definition().
