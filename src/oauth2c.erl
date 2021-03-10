@@ -16,14 +16,23 @@
 
 -export([new_client/3, new_client/4,
          discover/1, discover/2,
-         authorize_url/3]).
+         authorize_url/3,
+         request_token/3]).
 
--export_type([client/0,
+-export_type([error/0,
+              client/0,
               response_type/0,
               scope/0, scopes/0,
               redirect_uri/0,
-              authorize_code_request/0, authorize_token_request/0,
-              authorize_request/0]).
+              authorize_code_request/0, authorize_implicit_request/0,
+              authorize_request/0,
+              grant_type/0,
+              token_code_request/0, token_owner_creds_request/0,
+              token_client_creds_request/0, token_refresh_request/0,
+              token_request/0,
+              token_response/0]).
+
+-type error() :: oauth2c_error:error_response().
 
 -type client() :: oauth2c_client:client().
 
@@ -34,19 +43,54 @@
 
 -type redirect_uri() :: binary().
 
--type authorize_code_request() :: #{state => binary(),
-                                    redirect_uri => redirect_uri(),
-                                    scope => scopes(),
-                                    atom() => binary()}.
+-type authorize_code_request() ::
+        #{state => binary(),
+          redirect_uri => redirect_uri(),
+          scope => scopes(),
+          atom() => binary()}.
 
--type authorize_token_request() :: #{state => binary(),
-                                     redirect_uri => redirect_uri(),
-                                     scope => scopes(),
-                                     atom() => binary()}.
+-type authorize_implicit_request() ::
+        #{state => binary(),
+          redirect_uri => redirect_uri(),
+          scope => scopes(),
+          atom() => binary()}.
 
 -type authorize_request() ::
         authorize_code_request()
-      | authorize_token_request().
+      | authorize_implicit_request().
+
+-type grant_type() :: binary().
+
+-type token_code_request() ::
+        #{code := binary(),
+          redirect_uri => binary(),
+          state => binary()}.
+
+-type token_owner_creds_request() ::
+        #{username := binary(),
+          password := binary(),
+          scope => scopes()}.
+
+-type token_client_creds_request() ::
+        #{scope => scopes()}.
+
+-type token_refresh_request() ::
+        #{refresh_token := binary(),
+          scope => scopes()}.
+
+-type token_request() ::
+        token_code_request()
+      | token_owner_creds_request()
+      | token_client_creds_request()
+      | token_refresh_request().
+
+-type token_response() ::
+        #{access_token := binary(),
+          token_type := binary(),
+          expires_in => integer(),
+          refresh_token => binary(),
+          scope => binary(),
+          binary() => json:value()}.
 
 -spec new_client(oauth2c_client:issuer(),
                  oauth2c_client:id(), oauth2c_client:secret()) ->
@@ -90,3 +134,8 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
     {error, Reason} ->
       {error, {invalid_authorization_endpoint, Reason}}
   end.
+
+-spec request_token(client(), grant_type(), token_request()) ->
+        {ok, token_response()} | {error, error()}.
+request_token(Client, GrantType, Request) ->
+  ok.
