@@ -22,7 +22,7 @@
 
 -type authorization_server_metadata() ::
         #{issuer :=
-            oauth2c:issuer(),
+            oauth2c_client:issuer(),
           authorization_endpoint =>
             binary(),
           token_endpoint =>
@@ -71,7 +71,7 @@
       | {mhttp, term()}
       | {invalid_syntax, term()}
       | {invalid_metadata, term()}
-      | {bad_issuer, oauth2c:issuer(), binary()}.
+      | {bad_issuer, oauth2c_client:issuer(), binary()}.
 
 -spec authorization_server_metadata_definition() ->
         jsv:definition().
@@ -109,13 +109,13 @@ authorization_server_metadata_definition() ->
      required =>
        [issuer, response_types_supported]}}.
 
--spec discover(oauth2c:issuer()) ->
+-spec discover(oauth2c_client:issuer()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
 discover(Issuer) when is_binary(Issuer) ->
   discover(Issuer, <<".well-known/oauth-authorization-server">>).
 
--spec discover(oauth2c:issuer(), Suffix :: binary()) ->
+-spec discover(oauth2c_client:issuer(), Suffix :: binary()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
 discover(Issuer, Suffix) when is_binary(Issuer), is_binary(Suffix) ->
@@ -156,7 +156,7 @@ parse_metadata(Bin) ->
       {error, {invalid_syntax, Reason}}
   end.
 
--spec discovery_uri(oauth2c:issuer(), Suffix :: binary()) ->
+-spec discovery_uri(oauth2c_client:issuer(), Suffix :: binary()) ->
         binary().
 discovery_uri(Issuer0, Suffix) ->
   Clean = fun (<<$/, Rest/binary>>) -> Rest;
