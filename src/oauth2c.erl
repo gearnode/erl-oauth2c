@@ -36,11 +36,13 @@
 
 -type authorize_code_request() :: #{state => binary(),
                                     redirect_uri => redirect_uri(),
-                                    scope => scopes()}.
+                                    scope => scopes(),
+                                    atom() => binary()}.
 
 -type authorize_token_request() :: #{state => binary(),
                                      redirect_uri => redirect_uri(),
-                                     scope => scopes()}.
+                                     scope => scopes(),
+                                     atom() => binary()}.
 
 -type authorize_request() ::
         authorize_code_request()
