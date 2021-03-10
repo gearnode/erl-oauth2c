@@ -27,7 +27,7 @@
 
 -type client() :: oauth2c_client:client().
 
--type response_type() :: code | token.
+-type response_type() :: binary().
 
 -type scope() :: binary().
 -type scopes() :: [scope()].
@@ -75,13 +75,11 @@ discover(#{issuer := Issuer}, Suffix) ->
         {ok, binary()} | {error, term()}.
 authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
               ResponseType, Request) ->
-  Parameters0 =
-    maps:merge(Request, #{client_id => Id,
-                          response_type => atom_to_binary(ResponseType)}),
-  Parameters = maps:fold(fun (K0, V, Acc) ->
-                             K = atom_to_binary(K0),
-                             Acc#{K => V}
-                         end, #{}, Parameters0),
+  Parameters =
+    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
+              #{},
+              maps:merge(Request,
+                         #{client_id => Id, response_type => ResponseType})),
   case uri:parse(Endpoint0) of
     {ok, Endpoint} ->
       {ok,
