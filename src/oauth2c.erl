@@ -14,7 +14,8 @@
 
 -module(oauth2c).
 
--export([authorize_url/3]).
+-export([new_client/3, new_client/4,
+         authorize_url/3]).
 
 -export_type([client/0,
               response_type/0,
@@ -43,6 +44,19 @@
 -type authorize_request() ::
         authorize_code_request()
       | authorize_token_request().
+
+-spec new_client(oauth2c_client:issuer(),
+                 oauth2c_client:id(), oauth2c_client:secret()) ->
+        {ok, client()} | {error, term()}.
+new_client(Issuer, Id, Secret) ->
+  oauth2c_client:new_client(Issuer, Id, Secret).
+
+-spec new_client(oauth2c_client:issuer(),
+                 oauth2c_client:id(), oauth2c_client:secret(),
+                 oauth2c_client:options()) ->
+        {ok, client()} | {error, term()}.
+new_client(Issuer, Id, Secret, Options) ->
+  oauth2c_client:new_client(Issuer, Id, Secret, Options).
 
 -spec authorize_url(client(), response_type(), authorize_request()) ->
         {ok, binary()} | {error, term()}.
