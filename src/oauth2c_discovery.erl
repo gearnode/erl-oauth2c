@@ -119,7 +119,6 @@ discover(Issuer) when is_binary(Issuer) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
 discover(Issuer, Suffix) when is_binary(Issuer), is_binary(Suffix) ->
-  io:format("~p~n", [discovery_uri(Issuer, Suffix)]),
   Request = #{method => get, target => discovery_uri(Issuer, Suffix)},
   case mhttp:send_request(Request) of
     {ok, #{status := 200, body := Data}} ->
