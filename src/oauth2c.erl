@@ -18,9 +18,10 @@
          discover/1, discover/2,
          authorize_url/3,
          token_response_definition/0,
-         request_token/3,
+         token/3,
          introspect_response_definition/0,
-         introspect/2]).
+         introspect/2,
+         revoke/2]).
 
 -export_type([error/0,
               client/0,
@@ -33,7 +34,8 @@
               token_code_request/0, token_owner_creds_request/0,
               token_client_creds_request/0, token_refresh_request/0,
               token_request/0, token_response/0,
-              introspect_request/0, introspect_response/0]).
+              introspect_request/0, introspect_response/0,
+              revoke_token_request/0]).
 
 -type error() :: oauth2c_error:error_response().
 
@@ -118,6 +120,11 @@
           jti => binary(),
           binary() => json:value()}.
 
+-type revoke_token_request() ::
+        #{token := binary(),
+          token_type_hint => binary(),
+          atom() => binary()}.
+
 -spec new_client(oauth2c_client:issuer(),
                  oauth2c_client:id(), oauth2c_client:secret()) ->
         {ok, client()} | {error, term()}.
@@ -161,10 +168,10 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
       {error, {invalid_authorization_endpoint, Reason}}
   end.
 
--spec request_token(client(), grant_type(), token_request()) ->
+-spec token(client(), grant_type(), token_request()) ->
         {ok, token_response()} | {error, {oauth2, error()} | term()}.
-request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
-              GrantType, Parameters0) ->
+token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
+      GrantType, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =
     maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
@@ -273,6 +280,35 @@ introspect(#{id := Id, secret := Secret, introspect_endpoint := Endpoint},
             {error, Reason} ->
               {error, {invalid_response, Reason}}
           end;
+        {error, Reason} ->
+          {error, {invalid_response, Reason}}
+      end;
+    {error, Reason} ->
+      {error, {invalid_response, Reason}}
+  end.
+
+-spec revoke(client(), revoke_token_request()) ->
+        ok | {error, term()}.
+revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},
+       Parameters0) ->
+  Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
+  Parameters =
+    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
+              #{}, Parameters0),
+
+  Request = #{method => post, target => Endpoint,
+              header =>
+                [{<<"Authorization">>, <<"Basic ", Token/binary>>},
+                 {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
+                 {<<"Accept">>, <<"application/json">>}],
+              body => uri:encode_query(maps:to_list(Parameters))},
+  case mhttp:send_request(Request) of
+    {ok, #{status := 200}} ->
+      ok;
+    {ok, #{body := Bin}} ->
+      case oauth2c_error:parse(Bin) of
+        {ok, ErrorResponse} ->
+          {error, {oauth2, ErrorResponse}};
         {error, Reason} ->
           {error, {invalid_response, Reason}}
       end;

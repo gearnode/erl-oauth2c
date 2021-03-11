@@ -31,13 +31,15 @@
                       oauth2c_discovery:authorization_server_metadata(),
                     authorization_endpoint := binary(),
                     token_endpoint := binary(),
-                    introspect_endpoint := binary()}.
+                    introspect_endpoint := binary(),
+                    revocation_endpoint := binary()}.
 
 -type options() :: #{discover => boolean(),
                      discover_suffix => binary(),
                      authorization_endpoint => binary(),
                      token_endpoint => binary(),
-                     introspect_endpoint => binary()}.
+                     introspect_endpoint => binary(),
+                     revocation_endpoint => binary()}.
 
 -spec new_client(issuer(), id(), secret()) ->
         {ok, client()} | {error, term()}.
@@ -59,6 +61,8 @@ new_client(Issuer0, Id, Secret, Options) ->
                 build_token_endpoint(Issuer, Discovery, Options),
               introspect_endpoint =>
                 build_introspect_endpoint(Issuer, Discovery, Options),
+              revocation_endpoint =>
+                build_revocation_endpoint(Issuer, Discovery, Options),
               disovery => Discovery}};
         {error, Reason} ->
           {error, {discovery_failed, Reason}}
@@ -120,5 +124,20 @@ build_introspect_endpoint(Issuer, Discovery, Options) ->
           Value;
         error ->
           uri:serialize(Issuer#{path => <<"/introspect">>})
+      end
+  end.
+
+-spec build_revocation_endpoint(uri:uri(), map(), map()) ->
+        binary().
+build_revocation_endpoint(Issuer, Discovery, Options) ->
+  case maps:find(revocation_endpoint, Discovery) of
+    {ok, Value} ->
+      Value;
+    error ->
+      case maps:find(revocation_endpoint, Options) of
+        {ok, Value} ->
+          Value;
+        error ->
+          uri:serialize(Issuer#{path => <<"/revoke">>})
       end
   end.
