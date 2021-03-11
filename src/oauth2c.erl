@@ -140,9 +140,9 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
   end.
 
 -spec request_token(client(), grant_type(), token_request()) ->
-        {ok, token_response()} | {error, error() | term()}.
+        {ok, token_response()} | {error, {oauth2, error()} | term()}.
 request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
-              GrantType = <<"authorization_code">>, Parameters0) ->
+              GrantType, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =
     maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
@@ -158,7 +158,14 @@ request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
   case mhttp:send_request(Request) of
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
-        {ok, #{<<"access_token">> := _} = TokenData} ->
+        {ok, #{<<"error">> := _}} ->
+          case oauth2c_error:parse(Bin) of
+            {ok, ErrorResponse} ->
+              {error, {oauth2, ErrorResponse}};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
+        {ok, TokenData} ->
           Definition = token_response_definition(),
           Options = #{unknown_member_handling => keep,
                       disable_verification => true,
@@ -166,13 +173,6 @@ request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
           case jsv:validate(TokenData, Definition, Options) of
             {ok, TokenResponse} ->
               {ok, TokenResponse};
-            {error, Reason} ->
-              {error, {invalid_response, Reason}}
-          end;
-        {ok, ErrorData} ->
-          case oauth2c_error:parse(Bin) of
-            {ok, ErrorResponse} ->
-              {error, ErrorResponse};
             {error, Reason} ->
               {error, {invalid_response, Reason}}
           end;
