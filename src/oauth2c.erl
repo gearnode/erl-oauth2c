@@ -17,6 +17,7 @@
 -export([new_client/3, new_client/4,
          discover/1, discover/2,
          authorize_url/3,
+         token_response_definition/0,
          request_token/3]).
 
 -export_type([error/0,
@@ -69,14 +70,17 @@
 -type token_owner_creds_request() ::
         #{username := binary(),
           password := binary(),
-          scope => scopes()}.
+          scope => scopes(),
+          atom() => binary()}.
 
 -type token_client_creds_request() ::
-        #{scope => scopes()}.
+        #{scope => scopes(),
+          atom() => binary()}.
 
 -type token_refresh_request() ::
         #{refresh_token := binary(),
-          scope => scopes()}.
+          scope => scopes(),
+          atom() => binary()}.
 
 -type token_request() ::
         token_code_request()
@@ -136,6 +140,60 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
   end.
 
 -spec request_token(client(), grant_type(), token_request()) ->
-        {ok, token_response()} | {error, error()}.
-request_token(Client, GrantType, Request) ->
-  ok.
+        {ok, token_response()} | {error, error() | term()}.
+request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
+              GrantType = <<"authorization_code">>, Parameters0) ->
+  Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
+  Parameters =
+    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
+              #{},
+              maps:merge(Parameters0,
+                         #{grant_type => GrantType, client_id => Id})),
+  Request = #{method => post, target => Endpoint,
+              header =>
+                [{<<"Authorization">>, <<"Basic ", Token/binary>>},
+                 {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
+                 {<<"Accept">>, <<"application/json">>}],
+              body => uri:encode_query(maps:to_list(Parameters))},
+  case mhttp:send_request(Request) of
+    {ok, #{body := Bin}} ->
+      case json:parse(Bin) of
+        {ok, #{<<"access_token">> := _} = TokenData} ->
+          Definition = token_response_definition(),
+          Options = #{unknown_member_handling => keep,
+                      disable_verification => true,
+                      null_member_handling => remove},
+          case jsv:validate(TokenData, Definition, Options) of
+            {ok, TokenResponse} ->
+              {ok, TokenResponse};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
+        {ok, ErrorData} ->
+          case oauth2c_error:parse(Bin) of
+            {ok, ErrorResponse} ->
+              {error, ErrorResponse};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
+        {error, Reason} ->
+          {error, {invalid_response, Reason}}
+      end;
+    {error, Reason} ->
+      {error, {invalid_response, Reason}}
+  end;
+request_token(_, GrantType, _) ->
+  {error, {unsupported_grant_type, GrantType}}.
+
+-spec token_response_definition() ->
+        jsv:definition().
+token_response_definition() ->
+  {object,
+     #{members =>
+         #{access_token => string,
+           token_type => string,
+           expires_in => string,
+           refresh_token => string,
+           scope => string},
+       required =>
+         [access_token, token_type]}}.

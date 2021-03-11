@@ -22,7 +22,8 @@
     json,
     mhttp,
     uri,
-    jsv
+    jsv,
+    b64
    ]},
   {env,[]},
   {modules, []},
