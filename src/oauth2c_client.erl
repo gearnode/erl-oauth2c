@@ -30,12 +30,14 @@
                     discovery =>
                       oauth2c_discovery:authorization_server_metadata(),
                     authorization_endpoint := binary(),
-                    token_endpoint := binary()}.
+                    token_endpoint := binary(),
+                    introspect_endpoint := binary()}.
 
 -type options() :: #{discover => boolean(),
                      discover_suffix => binary(),
                      authorization_endpoint => binary(),
-                     token_endpoint => binary()}.
+                     token_endpoint => binary(),
+                     introspect_endpoint => binary()}.
 
 -spec new_client(issuer(), id(), secret()) ->
         {ok, client()} | {error, term()}.
@@ -55,6 +57,8 @@ new_client(Issuer0, Id, Secret, Options) ->
                 build_authorization_endpoint(Issuer, Discovery, Options),
               token_endpoint =>
                 build_token_endpoint(Issuer, Discovery, Options),
+              introspect_endpoint =>
+                build_introspect_endpoint(Issuer, Discovery, Options),
               disovery => Discovery}};
         {error, Reason} ->
           {error, {discovery_failed, Reason}}
@@ -101,5 +105,20 @@ build_token_endpoint(Issuer, Discovery, Options) ->
           Value;
         error ->
           uri:serialize(Issuer#{path => <<"/token">>})
+      end
+  end.
+
+-spec build_introspect_endpoint(uri:uri(), map(), map()) ->
+        binary().
+build_introspect_endpoint(Issuer, Discovery, Options) ->
+  case maps:find(introspect_endpoint, Discovery) of
+    {ok, Value} ->
+      Value;
+    error ->
+      case maps:find(introspect_endpoint, Options) of
+        {ok, Value} ->
+          Value;
+        error ->
+          uri:serialize(Issuer#{path => <<"/introspect">>})
       end
   end.

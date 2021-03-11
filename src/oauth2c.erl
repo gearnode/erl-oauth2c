@@ -18,7 +18,9 @@
          discover/1, discover/2,
          authorize_url/3,
          token_response_definition/0,
-         request_token/3]).
+         access_token/3,
+         introspect_response_definition/0,
+         introspect/2]).
 
 -export_type([error/0,
               client/0,
@@ -30,8 +32,8 @@
               grant_type/0,
               token_code_request/0, token_owner_creds_request/0,
               token_client_creds_request/0, token_refresh_request/0,
-              token_request/0,
-              token_response/0]).
+              token_request/0, token_response/0,
+              introspect_request/0, introspect_response/0]).
 
 -type error() :: oauth2c_error:error_response().
 
@@ -96,6 +98,26 @@
           scope => binary(),
           binary() => json:value()}.
 
+-type introspect_request() ::
+        #{token := binary(),
+          token_type_hint => binary(),
+          atom() => binary()}.
+
+-type introspect_response() ::
+        #{active := boolean(),
+          scope => scopes(),
+          client_id => oauth2c_client:id(),
+          username => binary(),
+          token_type => binary(),
+          exp => integer(),
+          iat => integer(),
+          nbf => integer(),
+          sub => binary(),
+          aud => binary(),
+          iss => binary(),
+          jti => binary(),
+          binary() => json:value()}.
+
 -spec new_client(oauth2c_client:issuer(),
                  oauth2c_client:id(), oauth2c_client:secret()) ->
         {ok, client()} | {error, term()}.
@@ -139,9 +161,9 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
       {error, {invalid_authorization_endpoint, Reason}}
   end.
 
--spec request_token(client(), grant_type(), token_request()) ->
+-spec access_token(client(), grant_type(), token_request()) ->
         {ok, token_response()} | {error, {oauth2, error()} | term()}.
-request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
+access_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
               GrantType, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =
@@ -181,19 +203,79 @@ request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
       end;
     {error, Reason} ->
       {error, {invalid_response, Reason}}
-  end;
-request_token(_, GrantType, _) ->
-  {error, {unsupported_grant_type, GrantType}}.
+  end.
 
 -spec token_response_definition() ->
         jsv:definition().
 token_response_definition() ->
   {object,
-     #{members =>
-         #{access_token => string,
-           token_type => string,
-           expires_in => string,
-           refresh_token => string,
-           scope => string},
-       required =>
-         [access_token, token_type]}}.
+   #{members =>
+       #{access_token => string,
+         token_type => string,
+         expires_in => integer,
+         refresh_token => string,
+         scope => string},
+     required =>
+       [access_token, token_type]}}.
+
+-spec introspect_response_definition() ->
+        jsv:definition().
+introspect_response_definition() ->
+  {object,
+   #{members =>
+       #{active => boolean,
+         scope => string,
+         client_id => string,
+         username => string,
+         token_type => string,
+         exp => integer,
+         iat => integer,
+         nbf => integer,
+         sub => string,
+         aud => string,
+         iss => string,
+         jti => string},
+     required =>
+       [active]}}.
+
+-spec introspect(client(), introspect_request()) ->
+        {ok, introspect_response()} | {error, term()}.
+introspect(#{id := Id, secret := Secret, introspect_endpoint := Endpoint},
+           Parameters0) ->
+  Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
+  Parameters =
+    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
+              #{}, Parameters0),
+  Request = #{method => post, target => Endpoint,
+              header =>
+                [{<<"Authorization">>, <<"Basic ", Token/binary>>},
+                 {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
+                 {<<"Accept">>, <<"application/json">>}],
+              body => uri:encode_query(maps:to_list(Parameters))},
+  case mhttp:send_request(Request) of
+    {ok, #{body := Bin}} ->
+      case json:parse(Bin) of
+        {ok, #{<<"error">> := _}} ->
+          case oauth2c_error:parse(Bin) of
+            {ok, ErrorResponse} ->
+              {error, {oauth2, ErrorResponse}};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
+        {ok, IntrospectData} ->
+          Definition = introspect_response_definition(),
+          Options = #{unknown_member_handling => keep,
+                      disable_verification => true,
+                      null_member_handling => remove},
+          case jsv:validate(IntrospectData, Definition, Options) of
+            {ok, IntrospectResponse} ->
+              {ok, IntrospectResponse};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
+        {error, Reason} ->
+          {error, {invalid_response, Reason}}
+      end;
+    {error, Reason} ->
+      {error, {invalid_response, Reason}}
+  end.

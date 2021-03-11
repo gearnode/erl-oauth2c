@@ -9,3 +9,4 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - Support of the [RFC 8414](https://tools.ietf.org/html/rfc8414).
 - Support of the [RFC 6749](https://tools.ietf.org/html/rfc6749).
+- Support of the [RFC 7662](https://tools.ietf.org/html/rfc7662).
