@@ -18,7 +18,7 @@
          discover/1, discover/2,
          authorize_url/3,
          token_response_definition/0,
-         access_token/3,
+         request_token/3,
          introspect_response_definition/0,
          introspect/2]).
 
@@ -161,9 +161,9 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
       {error, {invalid_authorization_endpoint, Reason}}
   end.
 
--spec access_token(client(), grant_type(), token_request()) ->
+-spec request_token(client(), grant_type(), token_request()) ->
         {ok, token_response()} | {error, {oauth2, error()} | term()}.
-access_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
+request_token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
               GrantType, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =
