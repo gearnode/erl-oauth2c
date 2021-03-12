@@ -111,5 +111,5 @@ Example:
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret).
 
-2> {ok, Discovery} = oauth2c:revoke(Client).
+2> {ok, Discovery} = oauth2c:discover(Client).
 ```
