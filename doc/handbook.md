@@ -103,3 +103,13 @@ Example:
 2> ok = oauth2c:revoke(Client, #{token => <<"my access token">>}).
 ```
 # Discovery
+Example:
+```erlang
+1> Issuer = <<"https://example.okta.com">>,
+   Id = <<"my_client_id">>,
+   Secret = <<"my_very_secret_paswd">>,
+   {ok, Client} =
+     oauth2c:new_client(Issuer, Id, Secret).
+
+2> {ok, Discovery} = oauth2c:revoke(Client).
+```
