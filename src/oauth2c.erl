@@ -177,7 +177,7 @@ token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
     maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
               #{},
               maps:merge(Parameters0,
-                         #{grant_type => GrantType, client_id => Id})),
+                         #{grant_type => GrantType})),
   Request = #{method => post, target => Endpoint,
               header =>
                 [{<<"Authorization">>, <<"Basic ", Token/binary>>},
@@ -247,7 +247,7 @@ introspect_response_definition() ->
 
 -spec introspect(client(), introspect_request()) ->
         {ok, introspect_response()} | {error, term()}.
-introspect(#{id := Id, secret := Secret, introspect_endpoint := Endpoint},
+introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
            Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =

@@ -59,7 +59,7 @@ new_client(Issuer0, Id, Secret, Options) ->
                 build_authorization_endpoint(Issuer, Discovery, Options),
               token_endpoint =>
                 build_token_endpoint(Issuer, Discovery, Options),
-              introspect_endpoint =>
+              introspection_endpoint =>
                 build_introspect_endpoint(Issuer, Discovery, Options),
               revocation_endpoint =>
                 build_revocation_endpoint(Issuer, Discovery, Options),
@@ -115,11 +115,11 @@ build_token_endpoint(Issuer, Discovery, Options) ->
 -spec build_introspect_endpoint(uri:uri(), map(), map()) ->
         binary().
 build_introspect_endpoint(Issuer, Discovery, Options) ->
-  case maps:find(introspect_endpoint, Discovery) of
+  case maps:find(introspection_endpoint, Discovery) of
     {ok, Value} ->
       Value;
     error ->
-      case maps:find(introspect_endpoint, Options) of
+      case maps:find(introspection_endpoint, Options) of
         {ok, Value} ->
           Value;
         error ->
