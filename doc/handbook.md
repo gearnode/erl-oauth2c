@@ -88,7 +88,7 @@ Example:
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
 
 2> {ok, Introspect} =
-     oauth2c:introspect(Client, #{token => <<"my access token">>}).
+     oauth2c:introspect(Client, <<"my access token">>, #{}).
 ```
 
 # Revocation
@@ -100,7 +100,7 @@ Example:
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
 
-2> ok = oauth2c:revoke(Client, #{token => <<"my access token">>}).
+2> ok = oauth2c:revoke(Client, <<"my access token">>, #{}).
 ```
 # Discovery
 Example:

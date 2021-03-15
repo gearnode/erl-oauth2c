@@ -20,8 +20,8 @@
          token_response_definition/0,
          token/3,
          introspect_response_definition/0,
-         introspect/2,
-         revoke/2]).
+         introspect/3,
+         revoke/3]).
 
 -export_type([error/0,
               client/0,
@@ -101,8 +101,7 @@
           binary() => json:value()}.
 
 -type introspect_request() ::
-        #{token := binary(),
-          token_type_hint => binary(),
+        #{token_type_hint => binary(),
           atom() => binary()}.
 
 -type introspect_response() ::
@@ -121,8 +120,7 @@
           binary() => json:value()}.
 
 -type revoke_token_request() ::
-        #{token := binary(),
-          token_type_hint => binary(),
+        #{token_type_hint => binary(),
           atom() => binary()}.
 
 -spec new_client(oauth2c_client:issuer(),
@@ -245,14 +243,14 @@ introspect_response_definition() ->
      required =>
        [active]}}.
 
--spec introspect(client(), introspect_request()) ->
+-spec introspect(client(), binary(), introspect_request()) ->
         {ok, introspect_response()} | {error, term()}.
 introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
-           Parameters0) ->
+           IntrospectToken, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =
     maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{}, Parameters0),
+              #{token => IntrospectToken}, Parameters0),
   Request = #{method => post, target => Endpoint,
               header =>
                 [{<<"Authorization">>, <<"Basic ", Token/binary>>},
@@ -287,14 +285,14 @@ introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
       {error, {invalid_response, Reason}}
   end.
 
--spec revoke(client(), revoke_token_request()) ->
+-spec revoke(client(), binary(), revoke_token_request()) ->
         ok | {error, term()}.
 revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},
-       Parameters0) ->
+       RevokeToken, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
   Parameters =
     maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{}, Parameters0),
+              #{token => RevokeToken}, Parameters0),
 
   Request = #{method => post, target => Endpoint,
               header =>
