@@ -119,6 +119,7 @@
           jti => binary(),
           binary() => json:value()}.
 
+%% https://tools.ietf.org/html/rfc7009#section-2.1
 -type revoke_token_request() ::
         #{token_type_hint => binary(),
           atom() => binary()}.
@@ -243,6 +244,7 @@ introspect_response_definition() ->
      required =>
        [active]}}.
 
+%% https://tools.ietf.org/html/rfc7662
 -spec introspect(client(), binary(), introspect_request()) ->
         {ok, introspect_response()} | {error, term()}.
 introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
@@ -285,6 +287,7 @@ introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
       {error, {invalid_response, Reason}}
   end.
 
+%% https://tools.ietf.org/html/rfc7009
 -spec revoke(client(), binary(), revoke_token_request()) ->
         ok | {error, term()}.
 revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},

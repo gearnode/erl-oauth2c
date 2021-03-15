@@ -12,6 +12,7 @@
 %% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 %% IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+%% This module implement the RFC 8414 (https://tools.ietf.org/html/rfc8414).
 -module(oauth2c_discovery).
 
 -export([authorization_server_metadata_definition/0,
@@ -20,6 +21,7 @@
 -export_type([authorization_server_metadata/0,
               discover_error_reason/0]).
 
+%% https://tools.ietf.org/html/rfc8414#section-2
 -type authorization_server_metadata() ::
         #{issuer :=
             oauth2c_client:issuer(),
@@ -73,6 +75,7 @@
       | {invalid_metadata, term()}
       | {bad_issuer, oauth2c_client:issuer(), binary()}.
 
+%% https://tools.ietf.org/html/rfc8414#section-2
 -spec authorization_server_metadata_definition() ->
         jsv:definition().
 authorization_server_metadata_definition() ->
@@ -109,12 +112,14 @@ authorization_server_metadata_definition() ->
      required =>
        [issuer, response_types_supported]}}.
 
+%% https://tools.ietf.org/html/rfc8414#section-3
 -spec discover(oauth2c_client:issuer()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
 discover(Issuer) when is_binary(Issuer) ->
   discover(Issuer, <<".well-known/oauth-authorization-server">>).
 
+%% https://tools.ietf.org/html/rfc8414#section-3
 -spec discover(oauth2c_client:issuer(), Suffix :: binary()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
@@ -156,6 +161,7 @@ parse_metadata(Bin) ->
       {error, {invalid_syntax, Reason}}
   end.
 
+%% https://tools.ietf.org/html/rfc8414#section-3.1
 -spec discovery_uri(oauth2c_client:issuer(), Suffix :: binary()) ->
         binary().
 discovery_uri(Issuer0, Suffix) ->

@@ -19,13 +19,17 @@
 
 -export_type([error_code/0, error_description/0, error_response/0]).
 
--type error_code() :: invalid_request
-                    | invalid_client
-                    | invalid_grant
-                    | unauthorized_client
-                    | unsupported_grant_type
-                    | invalid_scope
-                    | binary().
+-type error_code() ::
+      %% https://tools.ietf.org/html/rfc6749#section-5.2
+        invalid_request
+      | invalid_client
+      | invalid_grant
+      | unauthorized_client
+      | unsupported_grant_type
+      | invalid_scope
+      %% https://tools.ietf.org/html/rfc7009#section-2.2.1
+      | unsupported_token_type
+      | binary().
 
 -type error_description() :: binary().
 
