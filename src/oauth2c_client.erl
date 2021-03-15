@@ -31,14 +31,14 @@
                       oauth2c_discovery:authorization_server_metadata(),
                     authorization_endpoint := binary(),
                     token_endpoint := binary(),
-                    introspect_endpoint := binary(),
+                    introspection_endpoint := binary(),
                     revocation_endpoint := binary()}.
 
 -type options() :: #{discover => boolean(),
                      discover_suffix => binary(),
                      authorization_endpoint => binary(),
                      token_endpoint => binary(),
-                     introspect_endpoint => binary(),
+                     introspection_endpoint => binary(),
                      revocation_endpoint => binary()}.
 
 -spec new_client(issuer(), id(), secret()) ->
