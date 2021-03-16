@@ -66,7 +66,10 @@
           introspection_endpoint_auth_signing_alg_values_supported =>
             [binary()],
           code_challenge_methods_supported =>
-            [binary()]}.
+            [binary()],
+          %% https://tools.ietf.org/html/rfc8628#section-4
+          device_authorization_endpoint =>
+            binary()}.
 
 -type discover_error_reason() ::
         {bas_resp_code, integer()}
@@ -108,7 +111,9 @@ authorization_server_metadata_definition() ->
            {array, #{element => string}},
          introspection_endpoint_auth_signing_alg_values_supported =>
            {array, #{element => string}},
-         code_challenge_methods_supported => {array, #{element => string}}},
+         code_challenge_methods_supported => {array, #{element => string}},
+         %% https://tools.ietf.org/html/rfc8628#section-4
+         device_authorization_endpoint => uri},
      required =>
        [issuer, response_types_supported]}}.
 

@@ -32,14 +32,16 @@
                     authorization_endpoint := binary(),
                     token_endpoint := binary(),
                     introspection_endpoint := binary(),
-                    revocation_endpoint := binary()}.
+                    revocation_endpoint := binary(),
+                    device_authorization_endpoint := binary()}.
 
 -type options() :: #{discover => boolean(),
                      discover_suffix => binary(),
                      authorization_endpoint => binary(),
                      token_endpoint => binary(),
                      introspection_endpoint => binary(),
-                     revocation_endpoint => binary()}.
+                     revocation_endpoint => binary(),
+                     device_authorization_endpoint => binary()}.
 
 -spec new_client(issuer(), id(), secret()) ->
         {ok, client()} | {error, term()}.
@@ -63,6 +65,8 @@ new_client(Issuer0, Id, Secret, Options) ->
                 build_introspect_endpoint(Issuer, Discovery, Options),
               revocation_endpoint =>
                 build_revocation_endpoint(Issuer, Discovery, Options),
+              device_authorization_endpoint =>
+                build_device_authorization_endpoint(Issuer, Discovery, Options),
               disovery => Discovery}};
         {error, Reason} ->
           {error, {discovery_failed, Reason}}
@@ -139,5 +143,20 @@ build_revocation_endpoint(Issuer, Discovery, Options) ->
           Value;
         error ->
           uri:serialize(Issuer#{path => <<"/revoke">>})
+      end
+  end.
+
+-spec build_device_authorization_endpoint(uri:uri(), map(), map()) ->
+        binary().
+build_device_authorization_endpoint(Issuer, Discovery, Options) ->
+  case maps:find(device_authorization_endpoint, Discovery) of
+    {ok, Value} ->
+      Value;
+    error ->
+      case maps:find(device_authorization_endpoint, Options) of
+        {ok, Value} ->
+          Value;
+        error ->
+          uri:serialize(Issuer#{path => <<"/device_authorization">>})
       end
   end.

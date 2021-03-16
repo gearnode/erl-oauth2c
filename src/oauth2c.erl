@@ -21,7 +21,9 @@
          token/3,
          introspect_response_definition/0,
          introspect/3,
-         revoke/3]).
+         revoke/3,
+         device_authorize_response_definition/0,
+         device/2]).
 
 -export_type([error/0,
               client/0,
@@ -33,9 +35,10 @@
               grant_type/0,
               token_code_request/0, token_owner_creds_request/0,
               token_client_creds_request/0, token_refresh_request/0,
-              token_request/0, token_response/0,
+              token_device_request/0, token_request/0, token_response/0,
               introspect_request/0, introspect_response/0,
-              revoke_token_request/0]).
+              revoke_token_request/0,
+              device_authorize_request/0, device_authorize_response/0]).
 
 -type error() :: oauth2c_error:error_response().
 
@@ -86,11 +89,14 @@
           scope => scopes(),
           atom() => binary()}.
 
+-type token_device_request() :: #{}.
+
 -type token_request() ::
         token_code_request()
       | token_owner_creds_request()
       | token_client_creds_request()
-      | token_refresh_request().
+      | token_refresh_request()
+      | token_device_request().
 
 -type token_response() ::
         #{access_token := binary(),
@@ -123,6 +129,19 @@
 -type revoke_token_request() ::
         #{token_type_hint => binary(),
           atom() => binary()}.
+
+%% https://tools.ietf.org/html/rfc8628
+-type device_authorize_request() ::
+        #{scope => scopes()}.
+
+%% https://tools.ietf.org/html/rfc8628
+-type device_authorize_response() ::
+        #{device_code := binary(),
+          user_code := binary(),
+          verification_uri := binary(),
+          verification_uri_complete => binary(),
+          expires_in := integer(),
+          interval => integer()}.
 
 -spec new_client(oauth2c_client:issuer(),
                  oauth2c_client:id(), oauth2c_client:secret()) ->
@@ -310,6 +329,61 @@ revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},
       case oauth2c_error:parse(Bin) of
         {ok, ErrorResponse} ->
           {error, {oauth2, ErrorResponse}};
+        {error, Reason} ->
+          {error, {invalid_response, Reason}}
+      end;
+    {error, Reason} ->
+      {error, {invalid_response, Reason}}
+  end.
+
+device_authorize_response_definition() ->
+  {object,
+   #{members =>
+       #{device_code => string,
+         user_code => string,
+         verification_uri => uri,
+         verification_uri_complete => uri,
+         expires_in => integer,
+         interval => integer},
+     required =>
+       [device_code, user_code, verification_uri, expires_in]}}.
+
+-spec device(client(), device_authorize_request()) ->
+        {ok, device_authorize_response()} | {error, term()}.
+device(#{id := Id, secret := Secret, device_authorization_endpoint := Endpoint},
+       Parameters0) ->
+  Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
+  Parameters =
+    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
+              #{},
+              maps:merge(Parameters0, #{client_id => Id})),
+  Request = #{method => post, target => Endpoint,
+              header =>
+                [{<<"Authorization">>, <<"Basic ", Token/binary>>},
+                 {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
+                 {<<"Accept">>, <<"application/json">>}],
+              body => uri:encode_query(maps:to_list(Parameters))},
+  case mhttp:send_request(Request) of
+    {ok, #{body := Bin}} ->
+      case json:parse(Bin) of
+        {ok, #{<<"error">> := _}} ->
+          case oauth2c_error:parse(Bin) of
+            {ok, ErrorResponse} ->
+              {error, {oauth2, ErrorResponse}};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
+        {ok, DeviceData} ->
+          Definition = device_authorize_response_definition(),
+          Options = #{unknown_member_handling => keep,
+                      disable_verification => true,
+                      null_member_handling => remove},
+          case jsv:validate(DeviceData, Definition, Options) of
+            {ok, DeviceResponse} ->
+              {ok, DeviceResponse};
+            {error, Reason} ->
+              {error, {invalid_response, Reason}}
+          end;
         {error, Reason} ->
           {error, {invalid_response, Reason}}
       end;

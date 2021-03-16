@@ -29,6 +29,10 @@
       | invalid_scope
       %% https://tools.ietf.org/html/rfc7009#section-2.2.1
       | unsupported_token_type
+      %% https://tools.ietf.org/html/rfc8628#section-3.5
+      | slow_down
+      | access_denied
+      | expired_token
       | binary().
 
 -type error_description() :: binary().
