@@ -14,7 +14,7 @@ unstable versions can be modified without backward compatibility at any
 time.
 
 # Testing
-The library is test over Github and Okta OAuth2 provider with manual
+The library was tested over Github and Okta OAuth2 provider with manual
 test.
 
 # Supported Grants
@@ -26,7 +26,7 @@ The supported grant types are:
 - `urn:ietf:params:oauth:grant-type:device_code`
 
 The `authorization_code` grant type with PKCE extension is not supported
-as it is mainly built for frontend application.
+as it is mainly built for frontend applications.
 
 
 # Example
@@ -34,7 +34,7 @@ as it is mainly built for frontend application.
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
+   Secret = <<"my_very_secret_passwd">>,
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
      
@@ -54,7 +54,7 @@ Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
+   Secret = <<"my_very_secret_passwd">>,
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
      
@@ -69,7 +69,7 @@ Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
+   Secret = <<"my_very_secret_passwd">>,
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
      
@@ -84,7 +84,7 @@ Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
+   Secret = <<"my_very_secret_passwd">>,
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
      
@@ -100,7 +100,7 @@ Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
+   Secret = <<"my_very_secret_passwd">>,
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
 
@@ -115,7 +115,7 @@ Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
+   Secret = <<"my_very_secret_passwd">>,
    {ok, Client} =
      oauth2c:new_client(Issuer, Id, Secret, #{discovery => true}).
 
