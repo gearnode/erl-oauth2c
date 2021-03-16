@@ -13,9 +13,24 @@ updating their application when `oauth2c` is modified. Note that
 unstable versions can be modified without backward compatibility at any
 time.
 
+# Testing
+The library is test over Github and Okta OAuth2 provider with manual
+test.
+
 # Supported Grants
+The supported grant types are:
+- `authorization_code`
+- `token`
+- `client_credentials`
+- `password`
+- `urn:ietf:params:oauth:grant-type:device_code`
+
+The `authorization_code` grant type with PKCE extension is not supported
+as it is mainly built for frontend application.
+
+
+# Example
 ## Authorization Code Grant
-Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
    Id = <<"my_client_id">>,
@@ -79,6 +94,8 @@ Example:
 ```
 
 # Introspection
+The library supports introspection OAuth2 extension.
+
 Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
@@ -92,6 +109,8 @@ Example:
 ```
 
 # Revocation
+The library supports revocation OAuth2 extension.
+
 Example:
 ```erlang
 1> Issuer = <<"https://example.okta.com">>,
@@ -102,14 +121,6 @@ Example:
 
 2> ok = oauth2c:revoke(Client, <<"my access token">>, #{}).
 ```
-# Discovery
-Example:
-```erlang
-1> Issuer = <<"https://example.okta.com">>,
-   Id = <<"my_client_id">>,
-   Secret = <<"my_very_secret_paswd">>,
-   {ok, Client} =
-     oauth2c:new_client(Issuer, Id, Secret).
 
-2> {ok, Discovery} = oauth2c:discover(Client).
-```
+# Discovery
+The library supports the server metadata discovery extension.
