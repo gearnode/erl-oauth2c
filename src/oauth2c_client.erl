@@ -67,7 +67,7 @@ new_client(Issuer0, Id, Secret, Options) ->
                 build_revocation_endpoint(Issuer, Discovery, Options),
               device_authorization_endpoint =>
                 build_device_authorization_endpoint(Issuer, Discovery, Options),
-              disovery => Discovery}};
+              discovery => Discovery}};
         {error, Reason} ->
           {error, {discovery_failed, Reason}}
       end;
