@@ -167,8 +167,7 @@ parse_metadata(Bin) ->
   end.
 
 %% https://tools.ietf.org/html/rfc8414#section-3.1
--spec discovery_uri(oauth2c_client:issuer(), Suffix :: binary()) ->
-        binary().
+-spec discovery_uri(oauth2c_client:issuer(), Suffix :: binary()) -> uri:uri().
 discovery_uri(Issuer0, Suffix) ->
   Clean = fun (<<$/, Rest/binary>>) -> Rest;
               (Bin) -> Bin
@@ -179,8 +178,7 @@ discovery_uri(Issuer0, Suffix) ->
         lists:join($/, [<<"/">>,
                         Clean(Suffix),
                         Clean(maps:get(path, Issuer, <<>>))]),
-      URI = Issuer#{path => list_to_binary(Path)},
-      uri:serialize(URI);
+      Issuer#{path => list_to_binary(Path)};
     {error, Reason} ->
       erlang:error({bad_issuer, Reason})
   end.
