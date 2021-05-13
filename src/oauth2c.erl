@@ -169,7 +169,7 @@ discover(#{issuer := Issuer}, Suffix) ->
   oauth2c_discovery:discover(Issuer, Suffix).
 
 -spec authorize_url(client(), response_type(), authorize_request()) ->
-        {ok, binary()} | {error, term()}.
+        {ok, uri:uri()} | {error, term()}.
 authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
               ResponseType, Request) ->
   Parameters =
@@ -179,9 +179,7 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
                          #{client_id => Id, response_type => ResponseType})),
   case uri:parse(Endpoint0) of
     {ok, Endpoint} ->
-      {ok,
-       uri:serialize(
-         uri:add_query_parameters(Endpoint, maps:to_list(Parameters)))};
+      {ok, uri:add_query_parameters(Endpoint, maps:to_list(Parameters))};
     {error, Reason} ->
       {error, {invalid_authorization_endpoint, Reason}}
   end.
