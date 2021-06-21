@@ -177,9 +177,7 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
                                   response_type => ResponseType}),
   case uri:parse(Endpoint0) of
     {ok, Endpoint} ->
-      {ok,
-       uri:serialize(
-         uri:add_query_parameters(Endpoint, Parameters))};
+      {ok, uri:add_query_parameters(Endpoint, Parameters)};
     {error, Reason} ->
       {error, {invalid_authorization_endpoint, Reason}}
   end.
