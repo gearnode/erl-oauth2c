@@ -39,7 +39,7 @@
 
 -type error_response() :: #{error := error_code(),
                             error_description => error_description(),
-                            error_uri => binary()}.
+                            error_uri => uri:uri()}.
 
 -spec error_response_definition() ->
         jsv:definition().
@@ -60,7 +60,8 @@ parse(Bin) when is_binary(Bin) ->
       Definition = error_response_definition(),
       Options = #{unknown_member_handling => keep,
                   disable_verification => true,
-                  null_member_handling => remove},
+                  null_member_handling => remove,
+                  type_map => oauth2c_jsv:type_map()},
       case jsv:validate(Data, Definition, Options) of
         {ok, ErrorResponse} ->
           {ok, ErrorResponse};

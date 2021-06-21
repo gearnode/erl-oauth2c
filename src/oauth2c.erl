@@ -138,8 +138,8 @@
 -type device_authorize_response() ::
         #{device_code := binary(),
           user_code := binary(),
-          verification_uri := binary(),
-          verification_uri_complete => binary(),
+          verification_uri := uri:uri(),
+          verification_uri_complete => uri:uri(),
           expires_in := integer(),
           interval => integer()}.
 
@@ -170,17 +170,12 @@ discover(#{issuer := Issuer}, Suffix) ->
 
 -spec authorize_url(client(), response_type(), authorize_request()) ->
         {ok, uri:uri()} | {error, term()}.
-authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
+authorize_url(#{authorization_endpoint := Endpoint, id := Id},
               ResponseType, Request) ->
   Parameters = maps:fold(fun encode_authorize_url_parameters/3, [],
                          Request#{client_id => Id,
                                   response_type => ResponseType}),
-  case uri:parse(Endpoint0) of
-    {ok, Endpoint} ->
-      {ok, uri:add_query_parameters(Endpoint, Parameters)};
-    {error, Reason} ->
-      {error, {invalid_authorization_endpoint, Reason}}
-  end.
+  {ok, uri:add_query_parameters(Endpoint, Parameters)}.
 
 -spec token(client(), grant_type(), token_request()) ->
         {ok, token_response()} | {error, {oauth2, error()} | term()}.
@@ -209,7 +204,8 @@ token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
           Definition = token_response_definition(),
           Options = #{unknown_member_handling => keep,
                       disable_verification => true,
-                      null_member_handling => remove},
+                      null_member_handling => remove,
+                      type_map => oauth2c_jsv:type_map()},
           case jsv:validate(TokenData, Definition, Options) of
             {ok, TokenResponse} ->
               {ok, TokenResponse};
@@ -284,7 +280,8 @@ introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
           Definition = introspect_response_definition(),
           Options = #{unknown_member_handling => keep,
                       disable_verification => true,
-                      null_member_handling => remove},
+                      null_member_handling => remove,
+                      type_map => oauth2c_jsv:type_map()},
           case jsv:validate(IntrospectData, Definition, Options) of
             {ok, IntrospectResponse} ->
               {ok, IntrospectResponse};
@@ -365,7 +362,8 @@ device(#{id := Id, secret := Secret, device_authorization_endpoint := Endpoint},
           Definition = device_authorize_response_definition(),
           Options = #{unknown_member_handling => keep,
                       disable_verification => true,
-                      null_member_handling => remove},
+                      null_member_handling => remove,
+                      type_map => oauth2c_jsv:type_map()},
           case jsv:validate(DeviceData, Definition, Options) of
             {ok, DeviceResponse} ->
               {ok, DeviceResponse};

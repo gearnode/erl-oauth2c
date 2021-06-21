@@ -20,7 +20,7 @@
               client/0,
               options/0]).
 
--type issuer() :: binary().
+-type issuer() :: uri:uri().
 -type id() :: binary().
 -type secret() :: binary().
 
@@ -29,19 +29,19 @@
                     secret := secret(),
                     discovery =>
                       oauth2c_discovery:authorization_server_metadata(),
-                    authorization_endpoint := binary(),
-                    token_endpoint := binary(),
-                    introspection_endpoint := binary(),
-                    revocation_endpoint := binary(),
-                    device_authorization_endpoint := binary()}.
+                    authorization_endpoint := uri:uri(),
+                    token_endpoint := uri:uri(),
+                    introspection_endpoint := uri:uri(),
+                    revocation_endpoint := uri:uri(),
+                    device_authorization_endpoint := uri:uri()}.
 
 -type options() :: #{discover => boolean(),
                      discover_suffix => binary(),
-                     authorization_endpoint => binary(),
-                     token_endpoint => binary(),
-                     introspection_endpoint => binary(),
-                     revocation_endpoint => binary(),
-                     device_authorization_endpoint => binary()}.
+                     authorization_endpoint => uri:uri() | binary(),
+                     token_endpoint => uri:uri() | binary(),
+                     introspection_endpoint => uri:uri() | binary(),
+                     revocation_endpoint => uri:uri() | binary(),
+                     device_authorization_endpoint => uri:uri() | binary()}.
 
 -spec new_client(issuer(), id(), secret()) ->
         {ok, client()} | {error, term()}.
@@ -50,29 +50,31 @@ new_client(Issuer, Id, Secret) ->
 
 -spec new_client(issuer(), id(), secret(), options()) ->
         {ok, client()} | {error, term()}.
-new_client(Issuer0, Id, Secret, Options) ->
-  case uri:parse(Issuer0) of
-    {ok, Issuer} ->
-      case maybe_discover(Issuer0, Options) of
-        {ok, Discovery} ->
-          {ok,
-            #{issuer => Issuer0, id => Id, secret => Secret,
-              authorization_endpoint =>
-                build_authorization_endpoint(Issuer, Discovery, Options),
-              token_endpoint =>
-                build_token_endpoint(Issuer, Discovery, Options),
-              introspection_endpoint =>
-                build_introspect_endpoint(Issuer, Discovery, Options),
-              revocation_endpoint =>
-                build_revocation_endpoint(Issuer, Discovery, Options),
-              device_authorization_endpoint =>
-                build_device_authorization_endpoint(Issuer, Discovery, Options),
-              discovery => Discovery}};
-        {error, Reason} ->
-          {error, {discovery_failed, Reason}}
-      end;
+new_client(Issuer, Id, Secret, Options) when is_binary(Issuer) ->
+  case uri:parse(Issuer) of
+    {ok, URI} ->
+      new_client(URI, Id, Secret, Options);
     {error, Reason} ->
       {error, {invalid_issuer, Reason}}
+  end;
+new_client(Issuer, Id, Secret, Options) ->
+  case maybe_discover(Issuer, Options) of
+    {ok, Discovery} ->
+      {ok,
+       #{issuer => Issuer, id => Id, secret => Secret,
+         authorization_endpoint =>
+           build_authorization_endpoint(Issuer, Discovery, Options),
+         token_endpoint =>
+           build_token_endpoint(Issuer, Discovery, Options),
+         introspection_endpoint =>
+           build_introspect_endpoint(Issuer, Discovery, Options),
+         revocation_endpoint =>
+           build_revocation_endpoint(Issuer, Discovery, Options),
+         device_authorization_endpoint =>
+           build_device_authorization_endpoint(Issuer, Discovery, Options),
+         discovery => Discovery}};
+    {error, Reason} ->
+      {error, {discovery_failed, Reason}}
   end.
 
 -spec maybe_discover(issuer(), options()) ->
@@ -87,7 +89,7 @@ maybe_discover(_, _) ->
 
 
 -spec build_authorization_endpoint(uri:uri(), map(), map()) ->
-        binary().
+        uri:uri().
 build_authorization_endpoint(Issuer, Discovery, Options) ->
   case maps:find(authorization_endpoint, Discovery) of
     {ok, Value} ->
@@ -95,14 +97,19 @@ build_authorization_endpoint(Issuer, Discovery, Options) ->
     error ->
       case maps:find(authorization_endpoint, Options) of
         {ok, Value} ->
-          Value;
+          case uri:parse(Value) of
+            {ok, URI} ->
+              URI;
+            {error, Reason} ->
+              error({invalid_option, authorization_endpoint, Reason})
+          end;
         error ->
-          uri:serialize(Issuer#{path => <<"/authorize">>})
+          Issuer#{path => <<"/authorize">>}
       end
   end.
 
 -spec build_token_endpoint(uri:uri(), map(), map()) ->
-        binary().
+        uri:uri().
 build_token_endpoint(Issuer, Discovery, Options) ->
   case maps:find(token_endpoint, Discovery) of
     {ok, Value} ->
@@ -110,14 +117,19 @@ build_token_endpoint(Issuer, Discovery, Options) ->
     error ->
       case maps:find(token_endpoint, Options) of
         {ok, Value} ->
-          Value;
+          case uri:parse(Value) of
+            {ok, URI} ->
+              URI;
+            {error, Reason} ->
+              error({invalid_option, token_endpoint, Reason})
+          end;
         error ->
-          uri:serialize(Issuer#{path => <<"/token">>})
+          Issuer#{path => <<"/token">>}
       end
   end.
 
 -spec build_introspect_endpoint(uri:uri(), map(), map()) ->
-        binary().
+        uri:uri().
 build_introspect_endpoint(Issuer, Discovery, Options) ->
   case maps:find(introspection_endpoint, Discovery) of
     {ok, Value} ->
@@ -125,14 +137,19 @@ build_introspect_endpoint(Issuer, Discovery, Options) ->
     error ->
       case maps:find(introspection_endpoint, Options) of
         {ok, Value} ->
-          Value;
+          case uri:parse(Value) of
+            {ok, URI} ->
+              URI;
+            {error, Reason} ->
+              error({invalid_option, introspection_endpoint, Reason})
+          end;
         error ->
-          uri:serialize(Issuer#{path => <<"/introspect">>})
+          Issuer#{path => <<"/introspect">>}
       end
   end.
 
 -spec build_revocation_endpoint(uri:uri(), map(), map()) ->
-        binary().
+        uri:uri().
 build_revocation_endpoint(Issuer, Discovery, Options) ->
   case maps:find(revocation_endpoint, Discovery) of
     {ok, Value} ->
@@ -140,14 +157,19 @@ build_revocation_endpoint(Issuer, Discovery, Options) ->
     error ->
       case maps:find(revocation_endpoint, Options) of
         {ok, Value} ->
-          Value;
+          case uri:parse(Value) of
+            {ok, URI} ->
+              URI;
+            {error, Reason} ->
+              error({invalid_option, revocation_endpoint, Reason})
+          end;
         error ->
-          uri:serialize(Issuer#{path => <<"/revoke">>})
+          Issuer#{path => <<"/revoke">>}
       end
   end.
 
 -spec build_device_authorization_endpoint(uri:uri(), map(), map()) ->
-        binary().
+        uri:uri().
 build_device_authorization_endpoint(Issuer, Discovery, Options) ->
   case maps:find(device_authorization_endpoint, Discovery) of
     {ok, Value} ->
@@ -157,6 +179,6 @@ build_device_authorization_endpoint(Issuer, Discovery, Options) ->
         {ok, Value} ->
           Value;
         error ->
-          uri:serialize(Issuer#{path => <<"/device_authorization">>})
+          Issuer#{path => <<"/device_authorization">>}
       end
   end.

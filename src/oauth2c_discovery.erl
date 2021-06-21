@@ -26,13 +26,13 @@
         #{issuer :=
             oauth2c_client:issuer(),
           authorization_endpoint =>
-            binary(),
+            uri:uri(),
           token_endpoint =>
-            binary(),
+            uri:uri(),
           jwks_uri =>
-            binary(),
+            uri:uri(),
           registration_endpoint =>
-            binary(),
+            uri:uri(),
           scopes_supported =>
             [binary()],
           response_types_supported :=
@@ -46,21 +46,21 @@
           token_endpoint_auth_signing_alg_values_supported =>
             [binary()],
           service_documentation =>
-            binary(),
+            uri:uri(),
           ui_locales_supported =>
             [binary()],
           op_policy_uri =>
-            binary(),
+            uri:uri(),
           op_tos_uri =>
-            binary(),
+            uri:uri(),
           revocation_endpoint =>
-            binary(),
+            uri:uri(),
           revocation_endpoint_auth_methods_supported =>
             [binary()],
           revocation_endpoint_auth_signing_alg_values_supported =>
             [binary()],
           introspection_endpoint =>
-            binary(),
+            uri:uri(),
           introspection_endpoint_auth_methods_supported =>
             [binary()],
           introspection_endpoint_auth_signing_alg_values_supported =>
@@ -69,7 +69,7 @@
             [binary()],
           %% https://tools.ietf.org/html/rfc8628#section-4
           device_authorization_endpoint =>
-            binary()}.
+            uri:uri()}.
 
 -type discover_error_reason() ::
         {bas_resp_code, integer()}
@@ -118,17 +118,24 @@ authorization_server_metadata_definition() ->
        [issuer, response_types_supported]}}.
 
 %% https://tools.ietf.org/html/rfc8414#section-3
--spec discover(oauth2c_client:issuer()) ->
+-spec discover(oauth2c_client:issuer() | binary()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
-discover(Issuer) when is_binary(Issuer) ->
+discover(Issuer) ->
   discover(Issuer, <<".well-known/oauth-authorization-server">>).
 
 %% https://tools.ietf.org/html/rfc8414#section-3
--spec discover(oauth2c_client:issuer(), Suffix :: binary()) ->
+-spec discover(oauth2c_client:issuer() | binary(), Suffix :: binary()) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
-discover(Issuer, Suffix) when is_binary(Issuer), is_binary(Suffix) ->
+discover(Issuer, Suffix) when is_binary(Issuer) ->
+  case uri:parse(Issuer) of
+    {ok, URI} ->
+      discover(URI, Suffix);
+    {error, Reason} ->
+      {error, {bad_issuer, Reason}}
+  end;
+discover(Issuer, Suffix) when is_map(Issuer), is_binary(Suffix) ->
   Request = #{method => get, target => discovery_uri(Issuer, Suffix)},
   case mhttp:send_request(Request) of
     {ok, #{status := 200, body := Data}} ->
@@ -155,7 +162,8 @@ parse_metadata(Bin) ->
       Definition = authorization_server_metadata_definition(),
       Options = #{unknown_member_handling => keep,
                   disable_verification => true,
-                  null_member_handling => remove},
+                  null_member_handling => remove,
+                  type_map => oauth2c_jsv:type_map()},
       case jsv:validate(Data, Definition, Options) of
         {ok, Metadata} ->
           {ok, Metadata};
@@ -167,18 +175,12 @@ parse_metadata(Bin) ->
   end.
 
 %% https://tools.ietf.org/html/rfc8414#section-3.1
--spec discovery_uri(oauth2c_client:issuer(), Suffix :: binary()) -> uri:uri().
-discovery_uri(Issuer0, Suffix) ->
+-spec discovery_uri(uri:uri(), Suffix :: binary()) -> uri:uri().
+discovery_uri(Issuer, Suffix) ->
   Clean = fun (<<$/, Rest/binary>>) -> Rest;
               (Bin) -> Bin
           end,
-  case uri:parse(Issuer0) of
-    {ok, Issuer} ->
-      Path =
-        lists:join($/, [<<"/">>,
-                        Clean(Suffix),
-                        Clean(maps:get(path, Issuer, <<>>))]),
-      Issuer#{path => list_to_binary(Path)};
-    {error, Reason} ->
-      erlang:error({bad_issuer, Reason})
-  end.
+  Path = lists:join($/, [<<"/">>,
+                         Clean(Suffix),
+                         Clean(maps:get(path, Issuer, <<>>))]),
+  Issuer#{path => list_to_binary(Path)}.
