@@ -172,7 +172,7 @@ discover(#{issuer := Issuer}, Suffix) ->
         {ok, uri:uri()} | {error, term()}.
 authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
               ResponseType, Request) ->
-  Parameters = maps:fold(fun encode_authorize_url_parameters/3, #{},
+  Parameters = maps:fold(fun encode_authorize_url_parameters/3, [],
                          Request#{client_id => Id,
                                   response_type => ResponseType}),
   case uri:parse(Endpoint0) of
@@ -187,7 +187,7 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
 token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
       GrantType, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters = maps:fold(fun encode_token_parameters/3, #{},
+  Parameters = maps:fold(fun encode_token_parameters/3, [],
                          Parameters0#{grant_type => GrantType}),
   Request = #{method => post, target => Endpoint,
               header =>
@@ -262,7 +262,7 @@ introspect_response_definition() ->
 introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
            IntrospectToken, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters = maps:fold(fun encode_introspect_parameters/3, #{},
+  Parameters = maps:fold(fun encode_introspect_parameters/3, [],
                          Parameters0#{token => IntrospectToken}),
   Request = #{method => post, target => Endpoint,
               header =>
@@ -304,7 +304,7 @@ introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
 revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},
        RevokeToken, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters = maps:fold(fun encode_revoke_parameters/3, #{},
+  Parameters = maps:fold(fun encode_revoke_parameters/3, [],
                          Parameters0#{token => RevokeToken}),
   Request = #{method => post, target => Endpoint,
               header =>
@@ -343,7 +343,7 @@ device_authorize_response_definition() ->
 device(#{id := Id, secret := Secret, device_authorization_endpoint := Endpoint},
        Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters = maps:fold(fun encode_device_parameters/3, #{},
+  Parameters = maps:fold(fun encode_device_parameters/3, [],
                          Parameters0#{client_id => Id}),
   Request = #{method => post, target => Endpoint,
               header =>
