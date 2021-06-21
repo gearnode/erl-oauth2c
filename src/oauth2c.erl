@@ -49,7 +49,7 @@
 -type scope() :: binary().
 -type scopes() :: [scope()].
 
--type redirect_uri() :: binary().
+-type redirect_uri() :: binary() | uri:uri().
 
 -type authorize_code_request() ::
         #{state => binary(),
@@ -172,14 +172,14 @@ discover(#{issuer := Issuer}, Suffix) ->
         {ok, uri:uri()} | {error, term()}.
 authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
               ResponseType, Request) ->
-  Parameters =
-    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{},
-              maps:merge(Request,
-                         #{client_id => Id, response_type => ResponseType})),
+  Parameters = maps:fold(fun encode_authorize_url_parameters/3, #{},
+                         Request#{client_id => Id,
+                                  response_type => ResponseType}),
   case uri:parse(Endpoint0) of
     {ok, Endpoint} ->
-      {ok, uri:add_query_parameters(Endpoint, maps:to_list(Parameters))};
+      {ok,
+       uri:serialize(
+         uri:add_query_parameters(Endpoint, Parameters))};
     {error, Reason} ->
       {error, {invalid_authorization_endpoint, Reason}}
   end.
@@ -189,17 +189,14 @@ authorize_url(#{authorization_endpoint := Endpoint0, id := Id},
 token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
       GrantType, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters =
-    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{},
-              maps:merge(Parameters0,
-                         #{grant_type => GrantType})),
+  Parameters = maps:fold(fun encode_token_parameters/3, #{},
+                         Parameters0#{grant_type => GrantType}),
   Request = #{method => post, target => Endpoint,
               header =>
                 [{<<"Authorization">>, <<"Basic ", Token/binary>>},
                  {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
                  {<<"Accept">>, <<"application/json">>}],
-              body => uri:encode_query(maps:to_list(Parameters))},
+              body => uri:encode_query(Parameters)},
   case mhttp:send_request(Request) of
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
@@ -267,15 +264,14 @@ introspect_response_definition() ->
 introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
            IntrospectToken, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters =
-    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{token => IntrospectToken}, Parameters0),
+  Parameters = maps:fold(fun encode_introspect_parameters/3, #{},
+                         Parameters0#{token => IntrospectToken}),
   Request = #{method => post, target => Endpoint,
               header =>
                 [{<<"Authorization">>, <<"Basic ", Token/binary>>},
                  {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
                  {<<"Accept">>, <<"application/json">>}],
-              body => uri:encode_query(maps:to_list(Parameters))},
+              body => uri:encode_query(Parameters)},
   case mhttp:send_request(Request) of
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
@@ -310,16 +306,14 @@ introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
 revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},
        RevokeToken, Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters =
-    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{token => RevokeToken}, Parameters0),
-
+  Parameters = maps:fold(fun encode_revoke_parameters/3, #{},
+                         Parameters0#{token => RevokeToken}),
   Request = #{method => post, target => Endpoint,
               header =>
                 [{<<"Authorization">>, <<"Basic ", Token/binary>>},
                  {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
                  {<<"Accept">>, <<"application/json">>}],
-              body => uri:encode_query(maps:to_list(Parameters))},
+              body => uri:encode_query(Parameters)},
   case mhttp:send_request(Request) of
     {ok, #{status := 200}} ->
       ok;
@@ -351,16 +345,14 @@ device_authorize_response_definition() ->
 device(#{id := Id, secret := Secret, device_authorization_endpoint := Endpoint},
        Parameters0) ->
   Token = b64:encode(<<Id/binary, $:, Secret/binary>>),
-  Parameters =
-    maps:fold(fun (K0, V, Acc) -> K = atom_to_binary(K0), Acc#{K => V} end,
-              #{},
-              maps:merge(Parameters0, #{client_id => Id})),
+  Parameters = maps:fold(fun encode_device_parameters/3, #{},
+                         Parameters0#{client_id => Id}),
   Request = #{method => post, target => Endpoint,
               header =>
                 [{<<"Authorization">>, <<"Basic ", Token/binary>>},
                  {<<"Content-Type">>, <<"application/x-www-form-urlencoded">>},
                  {<<"Accept">>, <<"application/json">>}],
-              body => uri:encode_query(maps:to_list(Parameters))},
+              body => uri:encode_query(Parameters)},
   case mhttp:send_request(Request) of
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
@@ -388,3 +380,97 @@ device(#{id := Id, secret := Secret, device_authorization_endpoint := Endpoint},
     {error, Reason} ->
       {error, {invalid_response, Reason}}
   end.
+
+-spec encode_authorize_url_parameters(Key, Value, Acc) -> Result
+          when Key :: atom() | binary(),
+               Value :: term(),
+               Acc :: uri:query(),
+               Result :: Acc.
+encode_authorize_url_parameters(client_id, Id, Acc) ->
+  [{<<"client_id">>, Id} | Acc];
+encode_authorize_url_parameters(response_type, ResponseType, Acc) ->
+  [{<<"response_type">>, ResponseType} | Acc];
+encode_authorize_url_parameters(state, State, Acc) ->
+  [{<<"state">>, State} | Acc];
+encode_authorize_url_parameters(redirect_uri, Redirect, Acc) when
+    is_binary(Redirect) ->
+  [{<<"redirect_uri">>, Redirect} | Acc];
+encode_authorize_url_parameters(redirect_uri, Redirect, Acc) ->
+  [{<<"redirect_uri">>, uri:serialize(Redirect)} | Acc];
+encode_authorize_url_parameters(scope, Scopes, Acc) ->
+  [{<<"scope">>, iolist_to_binary(lists:join($\s, Scopes))} | Acc];
+encode_authorize_url_parameters(Key, Value, Acc) when is_atom(Key) ->
+  [{atom_to_binary(Key), Value} | Acc];
+encode_authorize_url_parameters(Key, Value, Acc) ->
+  [{Key, Value} | Acc].
+
+-spec encode_token_parameters(Key, Value, Acc) -> Result
+          when Key :: binary() | atom(),
+               Value :: term(),
+               Acc :: uri:query(),
+               Result :: Acc.
+encode_token_parameters(grant_type, GrantType, Acc) ->
+  [{<<"grant_type">>, GrantType} | Acc];
+encode_token_parameters(code, Code, Acc) ->
+  [{<<"code">>, Code} | Acc];
+encode_token_parameters(redirect_uri, Redirect, Acc) when
+    is_binary(Redirect) ->
+  [{<<"redirect_uri">>, Redirect} | Acc];
+encode_token_parameters(redirect_uri, Redirect, Acc) ->
+  [{<<"redirect_uri">>, uri:serialize(Redirect)} | Acc];
+encode_token_parameters(state, State, Acc) ->
+  [{<<"state">>, State} | Acc];
+encode_token_parameters(username, Username, Acc) ->
+  [{<<"username">>, Username} | Acc];
+encode_token_parameters(password, Password, Acc) ->
+  [{<<"password">>, Password} | Acc];
+encode_token_parameters(scope, Scopes, Acc) ->
+  [{<<"scope">>, iolist_to_binary(lists:join($\s, Scopes))} | Acc];
+encode_token_parameters(redirect_token, RefreshToken, Acc) ->
+  [{<<"refresh_token">>, RefreshToken} | Acc];
+encode_token_parameters(Key, Value, Acc) when is_atom(Key) ->
+  [{atom_to_binary(Key), Value} | Acc];
+encode_token_parameters(Key, Value, Acc) ->
+  [{Key, Value} | Acc].
+
+-spec encode_introspect_parameters(Key, Value, Acc) -> Result
+          when Key :: binary() | atom(),
+               Value :: term(),
+               Acc :: uri:query(),
+               Result :: Acc.
+encode_introspect_parameters(token, Token, Acc) ->
+  [{<<"token">>, Token} | Acc];
+encode_introspect_parameters(token_type_hint, Hint, Acc) ->
+  [{<<"token_type_hint">>, Hint} | Acc];
+encode_introspect_parameters(Key, Value, Acc) when is_atom(Key) ->
+  [{atom_to_binary(Key), Value} | Acc];
+encode_introspect_parameters(Key, Value, Acc) ->
+  [{Key, Value} | Acc].
+
+-spec encode_revoke_parameters(Key, Value, Acc) -> Result
+          when Key :: binary() | atom(),
+               Value :: term(),
+               Acc :: uri:query(),
+               Result :: Acc.
+encode_revoke_parameters(token, Token, Acc) ->
+  [{<<"token">>, Token} | Acc];
+encode_revoke_parameters(token_type_hint, Hint, Acc) ->
+  [{<<"token_type_hint">>, Hint} | Acc];
+encode_revoke_parameters(Key, Value, Acc) when is_atom(Key) ->
+  [{atom_to_binary(Key), Value} | Acc];
+encode_revoke_parameters(Key, Value, Acc) ->
+  [{Key, Value} | Acc].
+
+-spec encode_device_parameters(Key, Value, Acc) -> Result
+          when Key :: binary() | atom(),
+               Value :: term(),
+               Acc :: uri:query(),
+               Result :: Acc.
+encode_device_parameters(client_id, Id, Acc) ->
+  [{<<"client_id">>, Id} | Acc];
+encode_device_parameters(scope, Scopes, Acc) ->
+  [{<<"scope">>, iolist_to_binary(lists:join($\s, Scopes))} | Acc];
+encode_device_parameters(Key, Value, Acc) when is_atom(Key) ->
+  [{atom_to_binary(Key), Value} | Acc];
+encode_device_parameters(Key, Value, Acc) ->
+  [{Key, Value} | Acc].
