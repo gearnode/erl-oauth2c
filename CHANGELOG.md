@@ -8,7 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### Changed
 - Clean request parameters serialization.
-- Return authorization and discovery URIs as URI maps instead of URI strings.
+- Return authorization and discovery URIs as URI maps instead of URI
+  strings.
 ### Fixed
 - Typo in the client object (disovery instead of discovery).
 
