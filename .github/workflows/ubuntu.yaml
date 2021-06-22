@@ -11,8 +11,8 @@ jobs:
     name: "Running tests"
     runs-on: "ubuntu-20.04"
     env:
-      erlang_version: "23.2.1-1"
-      rebar3_version: "3.14.3"
+      erlang_version: "24.0.2-1"
+      rebar3_version: "3.16.1"
     steps:
       - uses: "actions/checkout@v2"
       - name: "Installing Erlang"
