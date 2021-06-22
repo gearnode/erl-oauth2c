@@ -177,7 +177,12 @@ build_device_authorization_endpoint(Issuer, Discovery, Options) ->
     error ->
       case maps:find(device_authorization_endpoint, Options) of
         {ok, Value} ->
-          Value;
+          case uri:parse(Value) of
+            {ok, URI} ->
+              URI;
+            {error, Reason} ->
+              error({invalid_option, device_authorization_endpoint, Reason})
+          end;
         error ->
           Issuer#{path => <<"/device_authorization">>}
       end
