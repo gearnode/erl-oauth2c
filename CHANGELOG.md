@@ -8,6 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### Changed
 - Update dependencies.
+- The function `authorize_url/3` now returns a map instead of `{ok,
+  Value}`.
 
 ## [0.2.0] - 2021-06-22
 ### Changed
