@@ -96,6 +96,8 @@ build_authorization_endpoint(Issuer, Discovery, Options) ->
       Value;
     error ->
       case maps:find(authorization_endpoint, Options) of
+        {ok, Value} when is_map(Value) ->
+          Value;
         {ok, Value} ->
           case uri:parse(Value) of
             {ok, URI} ->
@@ -116,6 +118,8 @@ build_token_endpoint(Issuer, Discovery, Options) ->
       Value;
     error ->
       case maps:find(token_endpoint, Options) of
+        {ok, Value} when is_map(Value) ->
+          Value;
         {ok, Value} ->
           case uri:parse(Value) of
             {ok, URI} ->
@@ -136,6 +140,8 @@ build_introspect_endpoint(Issuer, Discovery, Options) ->
       Value;
     error ->
       case maps:find(introspection_endpoint, Options) of
+        {ok, Value} when is_map(Value) ->
+          Value;
         {ok, Value} ->
           case uri:parse(Value) of
             {ok, URI} ->
@@ -156,6 +162,8 @@ build_revocation_endpoint(Issuer, Discovery, Options) ->
       Value;
     error ->
       case maps:find(revocation_endpoint, Options) of
+        {ok, Value} when is_map(Value) ->
+          Value;
         {ok, Value} ->
           case uri:parse(Value) of
             {ok, URI} ->
@@ -176,6 +184,8 @@ build_device_authorization_endpoint(Issuer, Discovery, Options) ->
       Value;
     error ->
       case maps:find(device_authorization_endpoint, Options) of
+        {ok, Value} when is_map(Value) ->
+          Value;
         {ok, Value} ->
           case uri:parse(Value) of
             {ok, URI} ->
