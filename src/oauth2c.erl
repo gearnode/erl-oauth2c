@@ -194,7 +194,7 @@ token(#{id := Id, secret := Secret, token_endpoint := Endpoint},
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
         {ok, #{<<"error">> := _}} ->
-          case oauth2c_error:parse(Bin) of
+          case oauth2c_error:parse_bin(Bin) of
             {ok, ErrorResponse} ->
               {error, {oauth2, ErrorResponse}};
             {error, Reason} ->
@@ -270,7 +270,7 @@ introspect(#{id := Id, secret := Secret, introspection_endpoint := Endpoint},
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
         {ok, #{<<"error">> := _}} ->
-          case oauth2c_error:parse(Bin) of
+          case oauth2c_error:parse_bin(Bin) of
             {ok, ErrorResponse} ->
               {error, {oauth2, ErrorResponse}};
             {error, Reason} ->
@@ -313,7 +313,7 @@ revoke(#{id := Id, secret := Secret, revocation_endpoint := Endpoint},
     {ok, #{status := 200}} ->
       ok;
     {ok, #{body := Bin}} ->
-      case oauth2c_error:parse(Bin) of
+      case oauth2c_error:parse_bin(Bin) of
         {ok, ErrorResponse} ->
           {error, {oauth2, ErrorResponse}};
         {error, Reason} ->
@@ -352,7 +352,7 @@ device(#{id := Id, secret := Secret, device_authorization_endpoint := Endpoint},
     {ok, #{body := Bin}} ->
       case json:parse(Bin) of
         {ok, #{<<"error">> := _}} ->
-          case oauth2c_error:parse(Bin) of
+          case oauth2c_error:parse_bin(Bin) of
             {ok, ErrorResponse} ->
               {error, {oauth2, ErrorResponse}};
             {error, Reason} ->

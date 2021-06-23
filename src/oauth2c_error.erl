@@ -15,7 +15,7 @@
 -module(oauth2c_error).
 
 -export([error_response_definition/0,
-         parse/1]).
+         parse_uri/1, parse_bin/1, parse_map/1]).
 
 -export_type([error_code/0, error_description/0, error_response/0]).
 
@@ -52,22 +52,31 @@ error_response_definition() ->
      required =>
        [error]}}.
 
--spec parse(binary()) ->
+-spec parse_uri(uri:uri()) ->
         {ok, error_response()} | {error, term()}.
-parse(Bin) when is_binary(Bin) ->
+parse_uri(#{query := Query}) ->
+  parse_map(maps:from_list(Query)).
+
+-spec parse_bin(binary()) ->
+        {ok, error_response()} | {error, term()}.
+parse_bin(Bin) when is_binary(Bin) ->
   case json:parse(Bin) of
     {ok, Data} ->
-      Definition = error_response_definition(),
-      Options = #{unknown_member_handling => keep,
-                  disable_verification => true,
-                  null_member_handling => remove,
-                  type_map => oauth2c_jsv:type_map()},
-      case jsv:validate(Data, Definition, Options) of
-        {ok, ErrorResponse} ->
-          {ok, ErrorResponse};
-        {error, Reason} ->
-          {error, {invalid_object, Reason}}
-      end;
+      parse_map(Data);
     {error, Reason} ->
       {error, {invalid_syntax, Reason}}
+  end.
+
+-spec parse_map(map()) -> {ok, error_response()} | {error, term()}.
+parse_map(Data) ->
+  Definition = error_response_definition(),
+  Options = #{unknown_member_handling => keep,
+              disable_verification => true,
+              null_member_handling => remove,
+              type_map => oauth2c_jsv:type_map()},
+  case jsv:validate(Data, Definition, Options) of
+    {ok, ErrorResponse} ->
+      {ok, ErrorResponse};
+    {error, Reason} ->
+      {error, {invalid_object, Reason}}
   end.

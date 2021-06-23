@@ -18,11 +18,11 @@
 
 parse_test_() ->
   [?_assertMatch({error, {invalid_syntax, _}},
-                 oauth2c_error:parse(<<>>)),
+                 oauth2c_error:parse_bin(<<>>)),
    ?_assertMatch({error, {invalid_object, _}},
-                 oauth2c_error:parse(<<"{}">>)),
+                 oauth2c_error:parse_bin(<<"{}">>)),
    ?_assertEqual({ok, #{error => <<"invalid_request">>}},
-                 oauth2c_error:parse(<<"{\"error\":\"invalid_request\"}">>)),
+                 oauth2c_error:parse_bin(<<"{\"error\":\"invalid_request\"}">>)),
    ?_assertEqual({ok,
                   #{error => <<"invalid_request">>,
                     error_description =>
@@ -31,4 +31,4 @@ parse_test_() ->
                       #{host => <<"authorization-server.com">>,
                         path => <<"/docs/access_token">>,
                         scheme => <<"https">>}}},
-                 oauth2c_error:parse(<<"{\"error\":\"invalid_request\",\"error_description\":\"Request was missing the 'redirect_uri' parameter.\",\"error_uri\":\"https://authorization-server.com/docs/access_token\"}">>))].
+                 oauth2c_error:parse_bin(<<"{\"error\":\"invalid_request\",\"error_description\":\"Request was missing the 'redirect_uri' parameter.\",\"error_uri\":\"https://authorization-server.com/docs/access_token\"}">>))].
