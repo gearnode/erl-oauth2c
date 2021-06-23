@@ -169,13 +169,13 @@ discover(#{issuer := Issuer}, Suffix) ->
   oauth2c_discovery:discover(Issuer, Suffix).
 
 -spec authorize_url(client(), response_type(), authorize_request()) ->
-        {ok, uri:uri()} | {error, term()}.
+        uri:uri().
 authorize_url(#{authorization_endpoint := Endpoint, id := Id},
               ResponseType, Request) ->
-  Parameters = maps:fold(fun encode_authorize_url_parameters/3, [],
-                         Request#{client_id => Id,
-                                  response_type => ResponseType}),
-  {ok, uri:add_query_parameters(Endpoint, Parameters)}.
+  Parameters = maps:fold(
+                 fun encode_authorize_url_parameters/3, [],
+                 Request#{client_id => Id, response_type => ResponseType}),
+  uri:add_query_parameters(Endpoint, Parameters).
 
 -spec token(client(), grant_type(), token_request()) ->
         {ok, token_response()} | {error, {oauth2, error()} | term()}.
