@@ -53,9 +53,14 @@ error_response_definition() ->
        [error]}}.
 
 -spec parse_uri(uri:uri()) ->
-        {ok, error_response()} | {error, term()}.
-parse_uri(#{query := Query}) ->
-  parse_map(maps:from_list(Query)).
+        {ok, error_response() | undefined} | {error, term()}.
+parse_uri(URI) ->
+  case uri:has_query_parameter(URI, <<"error">>) of
+    true ->
+      parse_map(maps:from_list(uri:query(URI)));
+    false ->
+      {ok, undefined}
+  end.
 
 -spec parse_bin(binary()) ->
         {ok, error_response()} | {error, term()}.
