@@ -16,7 +16,15 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-parse_test_() ->
+parse_uri_test_() ->
+  {ok, URIWithoutError} = uri:parse(<<"https://example.com/callback?state=foo">>),
+  {ok, URIWithError} = uri:parse(<<"https://exampl.com/callback?error=invalid_request&error_description=hello%20word">>),
+  [?_assertEqual({ok, undefined},
+                 oauth2c_error:parse_uri(URIWithoutError)),
+   ?_assertMatch({ok, _},
+                 oauth2c_error:parse_uri(URIWithError))].
+
+parse_bin_test_() ->
   [?_assertMatch({error, {invalid_syntax, _}},
                  oauth2c_error:parse_bin(<<>>)),
    ?_assertMatch({error, {invalid_object, _}},
