@@ -6,10 +6,16 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add function to parse OAuth2 error contains in URI query parameters.
+
 ### Changed
 - Update dependencies.
 - The function `authorize_url/3` now returns a map instead of `{ok,
   Value}`.
+
+### Fixed
+- Client options do not supports `uri:uri()` type as value.
 
 ## [0.2.0] - 2021-06-22
 ### Changed
