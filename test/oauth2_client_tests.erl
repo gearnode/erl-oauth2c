@@ -60,6 +60,21 @@ new_client_4_test_() ->
                 <<"https://example.com/delete">>,
               device_authorization_endpoint =>
                 <<"https://exmaple.com/console">>},
+  Options2 = #{authorization_endpoint =>
+                 #{host => <<"example.com">>, path => <<"/auth">>,
+                   scheme => <<"https">>},
+               token_endpoint =>
+                 #{host => <<"example.com">>, path => <<"/access_token">>,
+                   scheme => <<"https">>},
+               introspection_endpoint =>
+                 #{host => <<"example.com">>, path => <<"/explain">>,
+                   scheme => <<"https">>},
+               revocation_endpoint =>
+                 #{host => <<"example.com">>, path => <<"/delete">>,
+                   scheme => <<"https">>},
+               device_authorization_endpoint =>
+                 #{host => <<"exmaple.com">>, path => <<"/console">>,
+                   scheme => <<"https">>}},
   [?_assertEqual({ok,
                   #{authorization_endpoint =>
                       #{host => <<"example.com">>,path => <<"/auth">>,
@@ -82,4 +97,27 @@ new_client_4_test_() ->
                       #{host => <<"example.com">>,
                         path => <<"/access_token">>,
                         scheme => <<"https">>}}},
-                 oauth2c_client:new_client(Issuer, Id, Secret, Options))].
+                 oauth2c_client:new_client(Issuer, Id, Secret, Options)),
+   ?_assertEqual({ok,
+                  #{authorization_endpoint =>
+                      #{host => <<"example.com">>,path => <<"/auth">>,
+                        scheme => <<"https">>},
+                    device_authorization_endpoint =>
+                      #{host => <<"exmaple.com">>,path => <<"/console">>,
+                        scheme => <<"https">>},
+                    discovery => #{},
+                    id => <<"my_client_id">>,
+                    introspection_endpoint =>
+                      #{host => <<"example.com">>,path => <<"/explain">>,
+                        scheme => <<"https">>},
+                    issuer =>
+                      #{host => <<"example.com">>,scheme => <<"https">>},
+                    revocation_endpoint =>
+                      #{host => <<"example.com">>,path => <<"/delete">>,
+                        scheme => <<"https">>},
+                    secret => <<"my_client_secret">>,
+                    token_endpoint =>
+                      #{host => <<"example.com">>,
+                        path => <<"/access_token">>,
+                        scheme => <<"https">>}}},
+                 oauth2c_client:new_client(Issuer, Id, Secret, Options2))].
