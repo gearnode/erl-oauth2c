@@ -59,7 +59,7 @@ new_client_4_test_() ->
               revocation_endpoint =>
                 <<"https://example.com/delete">>,
               device_authorization_endpoint =>
-                <<"https://exmaple.com/console">>},
+                <<"https://example.com/console">>},
   Options2 = #{authorization_endpoint =>
                  #{host => <<"example.com">>, path => <<"/auth">>,
                    scheme => <<"https">>},
@@ -73,14 +73,14 @@ new_client_4_test_() ->
                  #{host => <<"example.com">>, path => <<"/delete">>,
                    scheme => <<"https">>},
                device_authorization_endpoint =>
-                 #{host => <<"exmaple.com">>, path => <<"/console">>,
+                 #{host => <<"example.com">>, path => <<"/console">>,
                    scheme => <<"https">>}},
   [?_assertEqual({ok,
                   #{authorization_endpoint =>
                       #{host => <<"example.com">>,path => <<"/auth">>,
                         scheme => <<"https">>},
                     device_authorization_endpoint =>
-                      #{host => <<"exmaple.com">>,path => <<"/console">>,
+                      #{host => <<"example.com">>,path => <<"/console">>,
                         scheme => <<"https">>},
                     discovery => #{},
                     id => <<"my_client_id">>,
@@ -103,7 +103,7 @@ new_client_4_test_() ->
                       #{host => <<"example.com">>,path => <<"/auth">>,
                         scheme => <<"https">>},
                     device_authorization_endpoint =>
-                      #{host => <<"exmaple.com">>,path => <<"/console">>,
+                      #{host => <<"example.com">>,path => <<"/console">>,
                         scheme => <<"https">>},
                     discovery => #{},
                     id => <<"my_client_id">>,
