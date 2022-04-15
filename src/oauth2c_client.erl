@@ -37,6 +37,7 @@
 
 -type options() :: #{discover => boolean(),
                      discover_suffix => binary(),
+                     discovery_endpoint => uri:uri() | binary(),
                      authorization_endpoint => uri:uri() | binary(),
                      token_endpoint => uri:uri() | binary(),
                      introspection_endpoint => uri:uri() | binary(),
@@ -80,8 +81,10 @@ new_client(Issuer, Id, Secret, Options) ->
 -spec maybe_discover(issuer(), options()) ->
         {ok, map()} |
         {error, oauth2c_discovery:discover_error_reason()}.
+maybe_discover(Issuer, #{discover := true, discovery_endpoint := Endpoint}) ->
+  oauth2c_discovery:discover(Issuer, {endpoint, Endpoint});
 maybe_discover(Issuer, #{discover := true, discover_suffix := Suffix}) ->
-  oauth2c_discovery:discover(Issuer, Suffix);
+  oauth2c_discovery:discover(Issuer, {suffix, Suffix});
 maybe_discover(Issuer, #{discover := true}) ->
   oauth2c_discovery:discover(Issuer);
 maybe_discover(_, _) ->

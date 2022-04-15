@@ -162,11 +162,11 @@ new_client(Issuer, Id, Secret, Options) ->
 discover(#{issuer := Issuer}) ->
   oauth2c_discovery:discover(Issuer).
 
--spec discover(client(), Suffix :: binary()) ->
+-spec discover(client(), {suffix | endpoint, binary()}) ->
         {ok, oauth2c_discovery:authorization_server_metadata()} |
         {error, oauth2c_discovery:discover_error_reason()}.
-discover(#{issuer := Issuer}, Suffix) ->
-  oauth2c_discovery:discover(Issuer, Suffix).
+discover(#{issuer := Issuer}, Opt) ->
+  oauth2c_discovery:discover(Issuer, Opt).
 
 -spec authorize_url(client(), response_type(), authorize_request()) ->
         uri:uri().

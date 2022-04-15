@@ -122,21 +122,27 @@ authorization_server_metadata_definition() ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
 discover(Issuer) ->
-  discover(Issuer, <<".well-known/oauth-authorization-server">>).
+  discover(Issuer, {suffix, <<".well-known/oauth-authorization-server">>}).
 
 %% https://tools.ietf.org/html/rfc8414#section-3
--spec discover(oauth2c_client:issuer() | binary(), Suffix :: binary()) ->
+-spec discover(oauth2c_client:issuer() | binary(), {suffix | endpoint, binary()}) ->
         {ok, authorization_server_metadata()} |
         {error, discover_error_reason()}.
-discover(Issuer, Suffix) when is_binary(Issuer) ->
+discover(Issuer, Opt) when is_binary(Issuer) ->
   case uri:parse(Issuer) of
     {ok, URI} ->
-      discover(URI, Suffix);
+      discover(URI, Opt);
     {error, Reason} ->
       {error, {bad_issuer, Reason}}
   end;
-discover(Issuer, Suffix) when is_map(Issuer), is_binary(Suffix) ->
-  Request = #{method => get, target => discovery_uri(Issuer, Suffix)},
+discover(Issuer, Opt) when is_map(Issuer) ->
+  Request = #{method => get,
+              target => case Opt of
+                          {suffix, Suffix} ->
+                            discovery_uri(Issuer, Suffix);
+                          {endpoint, Endpoint} ->
+                            Endpoint
+                        end},
   case mhttp:send_request(Request) of
     {ok, #{status := 200, body := Data}} ->
       case parse_metadata(Data) of
