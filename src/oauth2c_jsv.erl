@@ -1,4 +1,6 @@
+%% Copyright (c) 2022 Bryan Frimin <bryan@frimin.fr>.
 %% Copyright (c) 2021 Exograd SAS.
+%% Copyright (c) 2020 Bryan Frimin <bryan@frimin.fr>.
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -20,5 +22,3 @@
 type_map() ->
   maps:merge(jsv:default_type_map(),
              #{uri => oauth2c_jsv_type_uri}).
-
-
